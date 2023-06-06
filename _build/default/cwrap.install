@@ -1,0 +1,8 @@
+lib: [
+  "_build/install/default/lib/cwrap/META"
+  "_build/install/default/lib/cwrap/dune-package"
+  "_build/install/default/lib/cwrap/opam"
+]
+bin: [
+  "_build/install/default/bin/cwrap"
+]
