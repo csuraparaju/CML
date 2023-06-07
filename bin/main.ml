@@ -1,4 +1,4 @@
-(* open Cwrap
+open Cwrap
 
    let rec repl () =
   print_string "Welcome to the CML repl! Refer to https://github.com/csuraparaju/CML for docs! \n" ;
@@ -10,7 +10,7 @@
         let (lex', tok) = Lexer.next_token lex in 
         match tok with 
           | None -> ()
-          | Some t -> print_endline (Token.string_of_token t); traverse lex'
+          | Some t -> print_endline (Token.string_of_token_type t); traverse lex'
     in traverse lexbuf; repl ()
 
-let _ = repl () ;; *)
+let _ = repl () ;;

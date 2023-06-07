@@ -29,7 +29,6 @@ let rec next_token lex =
   | None -> (lex', None)
   | Some c -> 
     match c with 
-    | '[' -> read_array (advance lex')
     | '+' -> (advance lex', Some PLUS)
     | '-' -> (advance lex', Some MINUS)
     | '(' -> (advance lex', Some LPAREN)
@@ -39,13 +38,18 @@ let rec next_token lex =
     | ';' -> (advance lex', Some SEMICOLON)
     | '*' -> (advance lex', Some ASTERISK)
     | '/' -> (advance lex', Some SLASH)
-    | '{' -> if peek_char lex' '(' then read_hash lex' else (advance lex', Some LBRACE)
+    | ':' -> (advance lex', Some COLON)
+    (* Figure out how to implement hash structs later *)
+    (* | '{' -> if peek_char lex' '(' then read_hash (advance (advance lex')) else (advance lex', Some LBRACE) *)
+    | '{' -> (advance lex', Some LBRACE)
     | '<' -> if peek_char lex' '=' then (advance (advance lex'), Some LTE) else (advance lex', Some LT)
     | '>' -> if peek_char lex' '=' then (advance (advance lex'), Some GTE) else (advance lex', Some GT)
     | '=' -> if peek_char lex' '=' then (advance (advance lex'), Some EQ) else (advance lex', Some ASSIGN)
     | '!' -> if peek_char lex' '=' then (advance (advance lex'), Some NOT_EQ) else (advance lex', Some BANG)
     | '"' -> read_string (advance lex')
+    | '[' -> read_array (advance lex')
     | ch when is_digit ch -> read_number lex'
+    | ch when is_identifier ch -> read_identifier lex'
     | _ -> report lex' "Invalid character"
 
 and advance lex =
@@ -78,6 +82,11 @@ and is_digit ch =
   | '0'..'9' -> true
   | _ -> false
 
+and is_identifier ch = 
+  match ch with
+  | 'a'..'z' | 'A'..'Z' | '_' -> true
+  | _ -> false
+
 and read_while lexer condtFN = 
   let start_pos = lexer.position in
   let rec read_while' lexer =
@@ -102,21 +111,42 @@ and read_string lex =
   | _ -> report lex'' "Unterminated string"  
 
 and read_array lex = 
-  let lex' = skip_whitespace lex in
   let rec read_array' lex acc = 
-    match lex.ch with
-    | Some ']' -> (advance lex, Some (LITERAL (ARRAY (List.rev acc))))
+    let lex' = skip_whitespace lex in
+    match lex'.ch with
+    | Some ']' -> (advance lex', Some (LITERAL (ARRAY (List.rev acc))))
     | _ -> 
-      let (lex'', token) = next_token lex in
+      let (lex'', token) = next_token lex' in
       match token with
       | Some LITERAL l -> read_array' lex'' (l::acc)
       | Some COMMA -> read_array' lex'' acc
       | Some _ -> report lex'' "Invalid array: expected literal or comma"
       | None -> report lex'' "Unterminated array"
   in
-  read_array' lex' []
-
-and read_hash lex = (lex, None)
+  read_array' (skip_whitespace lex) []
 
 
+and read_identifier lex = 
+  let (lex', str) = read_while lex is_identifier in
+  match str with 
+    "fun" -> let (lex'', rtype) = read_while (skip_whitespace lex') is_identifier in
+              (lex'', Some (FUNCTION (parse_lit lex rtype)))
+  | _ -> (lex', Some (lookup_ident str))
 
+and parse_lit lex str = 
+  match str with
+    "int" -> FINT 
+  | "bool" -> FBOOL  
+  | "string" -> FSTRING 
+  | "array" -> FARRAY 
+  | _ -> report lex "Invalid function return type"
+
+and lookup_ident str = 
+  match str with
+    "let" -> LET
+  | "true" -> LITERAL (BOOL (true))
+  | "false" -> LITERAL (BOOL (false))
+  | "if" -> IF
+  | "else" -> ELSE
+  | "return" -> RETURN
+  | _ -> IDENT str
