@@ -1,75 +1,83 @@
 open Token
 
 type t = {
-  input : string;
+  source : string;
   position : int;
   ch : char option;
+  line : int;
+  has_error : bool;
 }
 
-let init input = 
-  if String.length (input) = 0 then 
-    {input; position = 0; ch = None}
+let report lex msg =
+  let pos = lex.position in
+  let line = lex.line in
+  let ch = match lex.ch with
+    | Some c -> c
+    | None -> ' ' in
+  let err = Printf.sprintf "Lexing Error: %s at line %d, position %d, char %c" msg line pos ch in
+  raise (Failure err)
+
+let init src =
+  if String.length src = 0 then
+    {source = src; position = 0; ch = None; line = 1; has_error = false}
   else
-    {input; position = 0; ch = Some (String.get input 0)}
+    {source = src; position = 0; ch = Some (String.get src 0); line = 1; has_error = false}
 
-let rec next_token lexer = 
-    let lex = skip_whitespace lexer in
-    match lex.ch with
-    | None -> (lex, None)
-    | Some ch -> 
-      match ch with
-      | '+' -> (advance lex, Some PLUS)
-      | '-' -> (advance lex, Some MINUS)
-      | '(' -> (advance lex, Some LPAREN)
-      | ')' -> (advance lex, Some RPAREN)
-      | '{' -> (advance lex, Some LBRACE)
-      | '}' -> (advance lex, Some RBRACE)
-      | ',' -> (advance lex, Some COMMA)
-      | ';' -> (advance lex, Some SEMICOLON)
-      | '*' -> (advance lex, Some ASTERISK)
-      | '/' -> (advance lex, Some SLASH)
-      | '<' -> (advance lex, Some LT)
-      | '>' -> (advance lex, Some GT)
-      | '=' -> if peek_char (advance lex) '=' then (advance (advance lex), Some EQ) else (advance lex, Some ASSIGN)
-      | '!' -> if peek_char (advance lex) '=' then (advance (advance lex), Some NOT_EQ) else (advance lex, Some BANG)
-      | ch when is_identifier ch -> read_identifier lex
-      | ch when is_digit ch -> read_number lex
-      | _ -> raise (Failure "Lexing Error: Invalid character")
-    
-and skip_whitespace lexer = 
-  let rec skip_whitespace' lex = 
-    match lex.ch with
-    | Some ch when ch = ' ' || ch = '\n' || ch = '\t' -> 
-      skip_whitespace' (advance lex)
-    | _ -> lex
-  in 
-  skip_whitespace' lexer
+let rec next_token lex = 
+  let lex' = skip_whitespace lex in
+  match lex'.ch with
+  | None -> (lex', None)
+  | Some c -> 
+    match c with 
+    | '[' -> read_array (advance lex')
+    | '+' -> (advance lex', Some PLUS)
+    | '-' -> (advance lex', Some MINUS)
+    | '(' -> (advance lex', Some LPAREN)
+    | ')' -> (advance lex', Some RPAREN)
+    | '}' -> (advance lex', Some RBRACE)
+    | ',' -> (advance lex', Some COMMA)
+    | ';' -> (advance lex', Some SEMICOLON)
+    | '*' -> (advance lex', Some ASTERISK)
+    | '/' -> (advance lex', Some SLASH)
+    | '{' -> if peek_char lex' '(' then read_hash lex' else (advance lex', Some LBRACE)
+    | '<' -> if peek_char lex' '=' then (advance (advance lex'), Some LTE) else (advance lex', Some LT)
+    | '>' -> if peek_char lex' '=' then (advance (advance lex'), Some GTE) else (advance lex', Some GT)
+    | '=' -> if peek_char lex' '=' then (advance (advance lex'), Some EQ) else (advance lex', Some ASSIGN)
+    | '!' -> if peek_char lex' '=' then (advance (advance lex'), Some NOT_EQ) else (advance lex', Some BANG)
+    | '"' -> read_string (advance lex')
+    | ch when is_digit ch -> read_number lex'
+    | _ -> report lex' "Invalid character"
 
-and advance lexer =
-  let pos = lexer.position + 1 in
-  let ch = 
-    if pos >= String.length lexer.input then
+and advance lex =
+  let pos = lex.position + 1 in
+  let ch =
+    if pos >= String.length lex.source then
       None
     else
-      Some (String.get lexer.input pos)
+      Some (String.get lex.source pos)
   in
-  {input = lexer.input; position = pos; ch}
+  let line = if ch = Some '\n' then lex.line + 1 else lex.line in
+  {source = lex.source; position = pos; ch; line; has_error = false} 
 
-and peek_char lexer ch =
-  match lexer.ch with
+and peek_char lex ch =
+  let peek = advance lex in
+  match peek.ch with
   | Some c when c = ch -> true
   | _ -> false
 
-and is_identifier ch =
-  match ch with
-  | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
-  | _ -> false
+and skip_whitespace lex =
+  let rec skip_whitespace' lex =
+    match lex.ch with
+    | Some ch when ch = ' ' || ch = '\n' || ch = '\t' -> skip_whitespace' (advance lex)
+    | _ -> lex
+  in
+  skip_whitespace' lex
 
 and is_digit ch =
   match ch with
-  | '0' .. '9' -> true
+  | '0'..'9' -> true
   | _ -> false
- 
+
 and read_while lexer condtFN = 
   let start_pos = lexer.position in
   let rec read_while' lexer =
@@ -77,40 +85,38 @@ and read_while lexer condtFN =
     | Some ch when condtFN ch -> read_while' (advance lexer)
     | _ -> lexer
   in
-  let seekedLex = read_while' lexer in
-  let endPos = seekedLex.position in
-  let ident = String.sub lexer.input start_pos (endPos - start_pos) in
-  (seekedLex, ident)
+  let lexer' = read_while' lexer in
+  let len = lexer'.position - start_pos in
+  let str = String.sub lexer'.source start_pos len in
+  (lexer', str)
 
-and read_identifier lexer =
-  let (lex, ident) = read_while lexer is_identifier in
-    match ident with
-     "fun" -> let (lex', ident') = read_while (skip_whitespace lex) is_identifier in
-              (lex', Some (FUNCTION ident'))
-    | _ -> (lex, Some (lookup_ident ident))
+and read_number lex =
+  let (lex', int_str) = read_while lex is_digit in
+  (lex', Some (LITERAL (INT (int_of_string int_str))))
 
-and lookup_ident str = 
-  match str with
-    "let" -> LET
-  | "true" -> TRUE
-  | "false" -> FALSE
-  | "if" -> IF
-  | "else" -> ELSE
-  | "return" -> RETURN
-  | _ -> IDENT str
+and read_string lex =
+  let lex' = skip_whitespace lex in
+  let (lex'', str) = read_while lex' (fun ch -> ch <> '"') in
+  match lex''.ch with
+  | Some '"' -> (advance lex'', Some (LITERAL (STRING str)))
+  | _ -> report lex'' "Unterminated string"  
 
-and read_number lexer =
-  let (lex, number) = read_while lexer is_digit in
-  (lex, Some (INT (int_of_string number)))
-  
-let pp fmt lexer =
-  Format.fprintf fmt "Lexer: %s" lexer.input 
+and read_array lex = 
+  let lex' = skip_whitespace lex in
+  let rec read_array' lex acc = 
+    match lex.ch with
+    | Some ']' -> (advance lex, Some (LITERAL (ARRAY (List.rev acc))))
+    | _ -> 
+      let (lex'', token) = next_token lex in
+      match token with
+      | Some LITERAL l -> read_array' lex'' (l::acc)
+      | Some COMMA -> read_array' lex'' acc
+      | Some _ -> report lex'' "Invalid array: expected literal or comma"
+      | None -> report lex'' "Unterminated array"
+  in
+  read_array' lex' []
 
-let show lexer =
-  Format.asprintf "%a" pp lexer 
+and read_hash lex = (lex, None)
 
-let rec token_list inLex acc = 
-  let (lex, token) = next_token inLex in
-  match token with
-  | None -> List.rev acc
-  | Some t -> token_list lex (t :: acc)
+
+

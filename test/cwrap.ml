@@ -1,8 +1,80 @@
 open Cwrap
 
+(* Token Tests: *)
+(* let token_tests = [
+    (Token.ILLEGAL, "ILLEGAL");
+    (Token.IDENT "foo", "IDENT foo");
+    (Token.LITERAL (Token.INT 5), "LITERAL INT: 5");
+    (Token.LITERAL (Token.BOOL true), "LITERAL BOOL: true");
+    (Token.LITERAL (Token.STRING "hello"), "LITERAL STRING: hello");
+    (Token.LITERAL (Token.ARRAY [Token.INT 1; Token.INT 2; Token.INT 3]), "LITERAL ARRAY: [ 1 2 3 ]");
+    (Token.LITERAL (Token.HASH [(Token.INT 1, Token.INT 2); (Token.INT 3, Token.INT 4)]), "LITERAL HASH: { (1,2) (3,4) }");
+    (Token.ASSIGN, "ASSIGN");
+    (Token.PLUS, "PLUS");
+    (Token.MINUS, "MINUS");
+    (Token.BANG, "BANG");
+    (Token.ASTERISK, "ASTERISK");
+    (Token.SLASH, "SLASH");
+    (Token.LT, "LT");
+    (Token.GT, "GT");
+    (Token.EQ, "EQ");
+    (Token.LTE, "LTE");
+    (Token.GTE, "GTE");
+    (Token.NOT_EQ, "NOT_EQ");
+    (Token.COMMA, "COMMA");
+    (Token.SEMICOLON, "SEMICOLON");
+    (Token.LPAREN, "LPAREN");
+    (Token.RPAREN, "RPAREN");
+    (Token.LBRACE, "LBRACE");
+    (Token.RBRACE, "RBRACE");
+    (Token.FUNCTION "foo", "FUNCTION(foo)");
+    (Token.LET, "LET");
+    (Token.IF, "IF");
+    (Token.ELSE, "ELSE");
+    (Token.RETURN, "RETURN");
+  ]
+
+  let test () = 
+    List.iter (fun (tok, expected) -> 
+      let actual = Token.string_of_token_type tok in
+      assert(actual = expected)
+      (* if actual <> expected then
+        Printf.printf "FAIL: expected %s, got %s\n" expected actual
+      else
+        Printf.printf "PASS: %s\n" expected *)
+    ) token_tests ;;
+    test () ;; *)
+
+
+(* Lexer Tests: Basics *)
+
+let rec test_lexer (inLex) (acc) =
+  let (lex', tok) = Lexer.next_token inLex in
+  match tok with 
+    None -> List.rev acc
+  | Some t -> test_lexer (lex') (t::acc)
+
+let tok1 = test_lexer (Lexer.init "\"hello\"") ([]) ;;
+assert (tok1 = [Token.LITERAL (Token.STRING "hello")])
+
+let tok2 = test_lexer (Lexer.init "[1,2,3]") ([]) ;;
+assert (tok2 = [Token.LITERAL (Token.ARRAY [Token.INT 1; Token.INT 2; Token.INT 3])])
+
+let tok3 = test_lexer (Lexer.init "[\"he\", \"llo\"]") ([]) ;;
+assert (tok3 = [Token.LITERAL (Token.ARRAY [Token.STRING "he"; Token.STRING "llo"])])
+
+let tok4 = test_lexer (Lexer.init "[[1],[2]]") ([]) ;;
+List.iter (fun x -> print_string (Token.string_of_token_type x)) tok4 ;;
+
+
+
+
+
+
+
 (* test_lexer: lexer -> token list -> token list *)
 (* repeatedly calls next_token on inLex, adding the result to acc, until next_token returns None, at which point it returns the reversed acc *)
-let rec test_lexer (inLex) (acc) =
+(* let rec test_lexer (inLex) (acc) =
   let (lex', tok) = Lexer.next_token inLex in
   match tok with 
     None -> List.rev acc
@@ -45,5 +117,5 @@ assert (lst10 = [Token.BANG; Token.IDENT "x"])
 (* Lexer Test: putting everything together *)
 let lst11 = test_lexer (Lexer.init "let add = fun int (x,y) { return x + y; };") ([]) ;;
 assert (lst11 = [Token.LET; Token.IDENT "add"; Token.ASSIGN; Token.FUNCTION ("int"); Token.LPAREN; Token.IDENT "x"; Token.COMMA; Token.IDENT "y"; Token.RPAREN; Token.LBRACE; Token.RETURN; Token.IDENT "x"; Token.PLUS; Token.IDENT "y"; Token.SEMICOLON; Token.RBRACE; Token.SEMICOLON;])
-
+ *)
 

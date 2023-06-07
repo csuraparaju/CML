@@ -1,7 +1,7 @@
-open Cwrap
+(* open Cwrap
 
-let rec repl () =
-  print_string "Welcome to the cwrap repl! Refer to https://github.com/csuraparaju/CML for docs! \n" ;
+   let rec repl () =
+  print_string "Welcome to the CML repl! Refer to https://github.com/csuraparaju/CML for docs! \n" ;
   print_string ">> ";
   flush stdout;
   let line = read_line () in
@@ -13,4 +13,4 @@ let rec repl () =
           | Some t -> print_endline (Token.string_of_token t); traverse lex'
     in traverse lexbuf; repl ()
 
-let _ = repl () ;;
+let _ = repl () ;; *)
