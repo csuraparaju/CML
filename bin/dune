@@ -2,4 +2,5 @@
  (public_name cwrap)
  (name main)
  (libraries cwrap stdlib)
+ (modes byte_complete)
  )

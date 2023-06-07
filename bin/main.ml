@@ -1,7 +1,7 @@
 open Cwrap
 
 let rec repl () =
-  print_string "Welcome to the cwrap repl! Refer to https://github.com/csuraparaju/CML for docs! \n"
+  print_string "Welcome to the cwrap repl! Refer to https://github.com/csuraparaju/CML for docs! \n" ;
   print_string ">> ";
   flush stdout;
   let line = read_line () in
