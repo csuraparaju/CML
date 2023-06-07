@@ -137,8 +137,9 @@ and parse_lit lex str =
   match str with
     "int" -> FINT 
   | "bool" -> FBOOL  
-  | "string" -> FSTRING 
-  | "array" -> FARRAY 
+  | "str" -> FSTRING 
+  | "arr" -> FARRAY 
+  | "void" -> VOID
   | _ -> report lex "Invalid function return type"
 
 and lookup_ident str = 

@@ -1,0 +1,15 @@
+let map = fun arr (inarr, outarr, fufnc, i){
+    if (i == length inarr - 1){
+        return outarr;
+    }
+    else{
+        set (outarr, i) = f (get (inarr, i))
+        return map (inarr, outarr, f, i + 1);
+    }
+}
+
+let main = fun void (){
+    let arr = [1, 2, 3, 4, 5]
+    let outarr = map (arr, [], (fun int (x) {return x * 2;}), 0)
+    print (outarr);
+}

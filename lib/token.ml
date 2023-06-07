@@ -11,6 +11,7 @@ type freturn =
   | FBOOL
   | FSTRING
   | FARRAY
+  | VOID
   (* | FHASH *)
 
 type token_type = 
@@ -58,6 +59,7 @@ let string_of_ftype t =
   | FBOOL -> "BOOL"
   | FSTRING -> "STRING"
   | FARRAY -> "ARRAY"
+  | VOID -> "VOID"
   (* | HASH -> "HASH" *)
 
 let string_of_token_type tok = 
