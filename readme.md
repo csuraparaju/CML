@@ -1,5 +1,23 @@
 # CML, a small interpreted, functional programming language with C-like syntax. 
 
+## Getting started
+
+#### Running the provided binary:
+    
+        git clone https://github.com/csuraparaju/CML.git
+        cd CML
+        ./cml <path-to-CML-file>
+
+#### Building from source:
+    Prerequisites:
+        - OCaml (>= 4.08.0)
+        - Dune (>= 2.0.0)
+        
+            git clone https://github.com/csuraparaju/CML.git
+            cd CML
+            dune build
+            dune exec
+
 ## Grammar (BNF-notation)
 
     program ::= {statement}
@@ -33,4 +51,5 @@
     let main = fun void () {
         let n = 10;
         let fib_n = fib(n);
-    }
+    }; 
+
