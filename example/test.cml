@@ -1,4 +1,4 @@
-let map = fun arr (inarr, outarr, fufnc, i){
+let map = fun arr (inarr, outarr, f, i){
     if (i == length inarr - 1){
         return outarr;
     }
