@@ -1,6 +1,7 @@
 open Cwrap
 
 let rec repl () =
+  print_string "Welcome to the cwrap repl! Enter a C expression to lex into Ocaml tokens.\n"
   print_string ">> ";
   flush stdout;
   let line = read_line () in
