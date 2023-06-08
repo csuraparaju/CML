@@ -4,9 +4,9 @@
 
 #### Running the provided binary:
     
-        git clone https://github.com/csuraparaju/CML.git
-        cd CML
-        ./cml <path-to-CML-file>
+    git clone https://github.com/csuraparaju/CML.git
+    cd CML
+    ./cml <path-to-CML-file>
 
 #### Building from source:
     Prerequisites:
@@ -52,7 +52,7 @@
 
 ##### Calling a function:
     let result = add(5, 10);
-    
+
 
 
 #### If-else statement:
