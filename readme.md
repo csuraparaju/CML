@@ -47,8 +47,13 @@
     let add = fun int (a, b) {
         a + b;
     };  
+
+    let <identifier> = fun <return_type> (<parameter_list>) { <statement> };
+
 ##### Calling a function:
     let result = add(5, 10);
+    
+
 
 #### If-else statement:
 
