@@ -3,7 +3,7 @@ let map = fun arr (inarr, outarr, f, i){
         return outarr;
     }
     else{
-        set (outarr, i) = f (get (inarr, i))
+        set (outarr, i, f (get (inarr, i)));
         return map (inarr, outarr, f, i + 1);
     }
 }

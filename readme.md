@@ -48,8 +48,6 @@
         a + b;
     };  
 
-    let <identifier> = fun <return_type> (<parameter_list>) { <statement> };
-
 ##### Calling a function:
     let result = add(5, 10);
 
