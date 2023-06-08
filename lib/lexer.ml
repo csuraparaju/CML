@@ -39,9 +39,8 @@ let rec next_token lex =
     | '*' -> (advance lex', Some ASTERISK)
     | '/' -> (advance lex', Some SLASH)
     | ':' -> (advance lex', Some COLON)
-    (* Figure out how to implement hash structs later *)
-    (* | '{' -> if peek_char lex' '(' then read_hash (advance (advance lex')) else (advance lex', Some LBRACE) *)
-    | '{' -> (advance lex', Some LBRACE)
+    | '.' -> (advance lex', Some DOT)
+    | '{' -> if peek_char lex' '(' then read_struct (advance (advance lex')) else (advance lex', Some LBRACE)
     | '<' -> if peek_char lex' '=' then (advance (advance lex'), Some LTE) else (advance lex', Some LT)
     | '>' -> if peek_char lex' '=' then (advance (advance lex'), Some GTE) else (advance lex', Some GT)
     | '=' -> if peek_char lex' '=' then (advance (advance lex'), Some EQ) else (advance lex', Some ASSIGN)
@@ -125,21 +124,58 @@ and read_array lex =
   in
   read_array' (skip_whitespace lex) []
 
+and read_struct lex = 
+  let rec read_struct' lex acc = 
+      let lex1 = skip_whitespace lex in
+      match lex1.ch with
+      | Some ')' -> 
+          if peek_char lex1 '}' 
+            then (advance (advance lex1), Some (LITERAL (STRUCT (List.rev acc)))) 
+          else report lex1 "Invalid struct: expected closing brace"
+      | _ ->
+        let (lex2, token) = next_token lex1 in
+        match token with
+        | Some LET ->
+          let (lex3, token1) = next_token (skip_whitespace lex2) in
+          begin
+            match token1 with
+            | Some IDENT id -> 
+              let (lex4, token2) = next_token (skip_whitespace lex3) in
+              begin
+                match token2 with
+                | Some COLON -> 
+                  let (lex5, token3) = next_token (skip_whitespace lex4) in
+                  begin
+                    match token3 with
+                    | Some LITERAL l -> read_struct' lex5 ((id, l)::acc)
+                    | _ -> report lex5 "Invalid struct: expected literal"
+                  end
+                | _ -> report lex4 "Invalid struct: expected colon"
+              end
+            | _ -> report lex3 "Invalid struct: expected identifier"
+          end
+        | Some COMMA -> read_struct' lex2 acc
+        | Some _ -> report lex2 "Invalid struct: expected let or comma"
+        | None -> report lex2 "Unterminated struct"
+  in
+  read_struct' (skip_whitespace lex) [] 
+
 
 and read_identifier lex = 
   let (lex', str) = read_while lex is_identifier in
   match str with 
     "fun" -> let (lex'', rtype) = read_while (skip_whitespace lex') is_identifier in
-              (lex'', Some (FUNCTION (parse_lit lex rtype)))
+              (lex'', Some (FUNCTION (parse_frtype lex rtype)))
   | _ -> (lex', Some (lookup_ident str))
 
-and parse_lit lex str = 
+and parse_frtype lex str = 
   match str with
     "int" -> FINT 
   | "bool" -> FBOOL  
   | "str" -> FSTRING 
   | "arr" -> FARRAY 
   | "void" -> VOID
+  | "struct" -> FSTRUCT
   | _ -> report lex "Invalid function return type"
 
 and lookup_ident str = 

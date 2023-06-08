@@ -86,7 +86,7 @@ let rec test_lexer (inLex) (acc) =
 let tok1 = test_lexer (Lexer.init "let x = 5;") ([]) ;;
 assert (tok1 = [Token.LET; Token.IDENT "x"; Token.ASSIGN; Token.LITERAL (Token.INT 5); Token.SEMICOLON])
 
-let sample = 
+(* let sample = 
   "
     let five = 5;
     let ten = 10;
@@ -105,5 +105,26 @@ let sample =
   "
 
 let tokSamp = test_lexer (Lexer.init sample) ([]) ;;
-List.iter (fun t -> Printf.printf "%s\n" (Token.string_of_token_type t)) tokSamp ;;
+List.iter (fun t -> print_endline (Token.string_of_token_type t)) tokSamp ;; *)
+
+(* let struct_test = "
+let person = {(
+    let name: "John",
+    let age: 30,
+    let address: {(
+        let street: "Main St",
+        let city: "New York",
+        let state: "NY",
+        let zip: 10001,
+    )}
+)};
+
+let address = person.address;
+let city = address.city;
+" *)
+(* 
+let tokStruct = test_lexer (Lexer.init struct_test) ([]) ;;
+List.iter (fun t -> print_endline (Token.string_of_token_type t)) tokStruct ;;  *)
+
+
 

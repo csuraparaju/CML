@@ -3,8 +3,7 @@ type literal =
   | BOOL of bool
   | STRING of string
   | ARRAY of literal list
-  (* Figure out how to make this work *)
-  (* | HASH of (literal * literal) list *)
+  | STRUCT of (string * literal) list
 
 type freturn = 
     FINT 
@@ -12,7 +11,7 @@ type freturn =
   | FSTRING
   | FARRAY
   | VOID
-  (* | FHASH *)
+  | FSTRUCT
 
 type token_type = 
     ILLEGAL
@@ -32,6 +31,7 @@ type token_type =
   | NOT_EQ
   | COMMA
   | COLON
+  | DOT
   | SEMICOLON
   | LPAREN
   | RPAREN
@@ -47,11 +47,11 @@ type t = token_type
 
 let rec string_of_literal lit = 
   match lit with
-  | INT i -> "INT: " ^ string_of_int i
-  | BOOL b -> "BOOL: " ^ string_of_bool b
-  | STRING s -> "STRING: " ^ s
+  | INT i -> "INT(" ^ string_of_int i ^ ")"
+  | BOOL b -> "BOOL(" ^ string_of_bool b ^ ")"
+  | STRING s -> "STRING(" ^ s ^ ")"
   | ARRAY a -> "ARRAY: [" ^ List.fold_left (fun acc x -> acc ^ " " ^ (string_of_literal x)) "" a ^ " ]"
-  (* | HASH h -> "HASH: {" ^ List.fold_left (fun acc (k, v) -> acc ^ " " ^ "(" ^ (string_of_literal k) ^ "," ^ (string_of_literal v) ^ ")") "" h ^ " }" *)
+  | STRUCT s -> "STRUCT: {" ^ List.fold_left (fun acc (k, v) -> acc ^ " " ^ k ^ ": " ^ (string_of_literal v)) "" s ^ " }" 
 
 let string_of_ftype t = 
   match t with
@@ -60,7 +60,7 @@ let string_of_ftype t =
   | FSTRING -> "STRING"
   | FARRAY -> "ARRAY"
   | VOID -> "VOID"
-  (* | HASH -> "HASH" *)
+  | FSTRUCT -> "STRUCT"
 
 let string_of_token_type tok = 
   match tok with
@@ -91,3 +91,4 @@ let string_of_token_type tok =
   | IF -> "IF"
   | ELSE -> "ELSE"
   | RETURN -> "RETURN"      
+  | DOT -> "DOT"
