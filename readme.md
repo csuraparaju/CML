@@ -56,9 +56,9 @@
 #### If-else statement:
 
     let result = if (10 > 5) {
-        return 10;
+        10;
     } else {
-        return 5;
+        5;
     };
 
 #### Looping:
