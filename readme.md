@@ -48,7 +48,7 @@
         a + b;
     };  
 
-#### Functions are values too:
+#### Functions are values:
 Use the '->' operator to declare a higher order function. "fn" is a reserved keyword
 indicating that the function is a hof that returns a function of the specified type. 
 
