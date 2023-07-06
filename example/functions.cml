@@ -9,3 +9,14 @@ let isOdd = fun int (x) {
 let hof = fun fn->int (x){
     return (fun int (y) {return x + y})
 };
+
+
+LITERAL(
+    FUNCTION(FUNCTION(INT), 
+    [LPAREN, IDENT(x), RPAREN], 
+    [RETURN, LPAREN, 
+        LITERAL(FUNCTION(INT),
+            [LPAREN, IDENT(y), RPAREN], 
+            [RETURN, IDENT(x), PLUS, IDENT(y), RPAREN]), 
+    RPAREN])
+    )

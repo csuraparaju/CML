@@ -86,6 +86,36 @@ let rec test_lexer (inLex) (acc) =
 let tok1 = test_lexer (Lexer.init "let x = 5;") ([]) ;;
 assert (tok1 = [Token.LET; Token.IDENT "x"; Token.ASSIGN; Token.LITERAL (Token.INT 5); Token.SEMICOLON])
 
+
+(* let hof_test = 
+  "
+  let hof = fun fn->int (x) {
+    return 
+    (
+      fun int (y) {
+        return x + y;
+      }
+    )
+  };
+  " *)
+
+
+(* Functions are represented as FUNCTION(return_type, args list, function body list) *)
+(* let hof_tok = test_lexer (Lexer.init hof_test) ([]) ;;
+assert (hof_tok = 
+[IDENT(hof), ASSIGN, 
+LITERAL(
+    FUNCTION(FUNCTION(INT), 
+    [LPAREN, IDENT(x), RPAREN], 
+    [RETURN, LPAREN, 
+        LITERAL(FUNCTION(INT),
+            [LPAREN, IDENT(y), RPAREN], 
+            [RETURN, IDENT(x), PLUS, IDENT(y), RPAREN]), 
+    RPAREN])
+    )]
+) *)
+
+
 (* let sample = 
   "
     let five = 5;
