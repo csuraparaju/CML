@@ -48,6 +48,16 @@
         a + b;
     };  
 
+#### Functions are values too:
+Use the '->' operator to declare a higher order function. "fn" is a reserved keyword
+indicating that the function is a hof that returns a function of the specified type. 
+
+    let hof = fun fn->int (x){
+        return (fun int (y) {
+            return x + y;
+        });
+    };
+
 ##### Calling a function:
     let result = add(5, 10);
 
