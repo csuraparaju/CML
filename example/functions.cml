@@ -1,0 +1,11 @@
+let add = fun int (x, y) {
+    return x + y
+};
+
+let isOdd = fun int (x) {
+    return (x % 2 == 1)
+};
+
+let hof = fun fn->int (x){
+    return (fun int (y) {return x + y})
+};

@@ -8,6 +8,10 @@ type t = {
   has_error : bool;
 }
 
+let snd t = 
+  match t with
+  | (_, x) -> x
+
 let report lex msg =
   let pos = lex.position in
   let line = lex.line in
@@ -40,6 +44,7 @@ let rec next_token lex =
     | '/' -> (advance lex', Some SLASH)
     | ':' -> (advance lex', Some COLON)
     | '.' -> (advance lex', Some DOT)
+    | '%' -> (advance lex', Some MOD)
     | '{' -> if peek_char lex' '(' then read_struct (advance (advance lex')) else (advance lex', Some LBRACE)
     | '<' -> if peek_char lex' '=' then (advance (advance lex'), Some LTE) else (advance lex', Some LT)
     | '>' -> if peek_char lex' '=' then (advance (advance lex'), Some GTE) else (advance lex', Some GT)
@@ -160,22 +165,68 @@ and read_struct lex =
   in
   read_struct' (skip_whitespace lex) [] 
 
+and read_function lex = 
+  let (lex', rtstr) = read_while (skip_whitespace (advance lex)) is_identifier in
+  let (lex'', rtype) = parse_frtype lex' rtstr in
+  let (lex''', params) = read_params (skip_whitespace (advance lex'')) in
+  match (skip_whitespace lex''').ch with 
+  | Some '{' -> 
+    let (lex'''', body) = read_body (skip_whitespace (advance lex''')) in
+    (lex'''', Some (LITERAL(FUNCTION(rtype, params, body))))
+  | _ -> report lex''' "Invalid function: expected opening brace for function body"
+
+and read_params lex = 
+  let rec read_params' lex acc = 
+    let lex' = skip_whitespace lex in
+    match lex'.ch with
+    | Some ')' -> (advance lex', List.rev ((RPAREN)::acc))
+    | _ -> 
+      let (lex'', token) = next_token lex' in
+      match token with
+        Some COMMA -> read_params' lex'' acc
+      | Some tok -> read_params' lex'' (tok::acc)
+      | None -> report lex'' "Unterminated function parameters"
+  in
+  read_params' (skip_whitespace lex) []
+
+and read_body lex = 
+  let rec read_body' lex acc = 
+    let lex' = skip_whitespace lex in
+    match lex'.ch with
+    | Some '}' -> (advance lex', List.rev ((RBRACE)::acc))
+    | _ -> 
+      let (lex'', token) = next_token lex' in
+      match token with
+        Some tok -> read_body' lex'' (tok::acc)
+      | None -> report lex'' "Unterminated function body"
+  in
+  read_body' (skip_whitespace lex) [] 
 
 and read_identifier lex = 
   let (lex', str) = read_while lex is_identifier in
   match str with 
-    "fun" -> let (lex'', rtype) = read_while (skip_whitespace lex') is_identifier in
-              (lex'', Some (FUNCTION (parse_frtype lex rtype)))
+    "fun" -> read_function lex'
   | _ -> (lex', Some (lookup_ident str))
 
 and parse_frtype lex str = 
   match str with
-    "int" -> FINT 
-  | "bool" -> FBOOL  
-  | "str" -> FSTRING 
-  | "arr" -> FARRAY 
-  | "void" -> VOID
-  | "struct" -> FSTRUCT
+    "int" -> (lex, FINT) 
+  | "bool" -> (lex, FBOOL)
+  | "str" -> (lex, FSTRING)
+  | "arr" -> (lex, FARRAY)
+  | "void" -> (lex, VOID)
+  | "struct" -> (lex, FSTRUCT)
+  | "fn" ->
+      (match lex.ch with
+      Some '-' -> 
+        if peek_char (lex) '>' then
+          let lex' = advance (advance lex) in
+          let (lex'', rtype) = read_while (skip_whitespace lex') is_identifier in
+          let (lex''', parsed_rtype) = parse_frtype lex'' rtype in
+          (lex''', FFUNCTION(parsed_rtype))
+        else report lex "Invalid function return type (expected '->' p1)"
+      | _ -> report lex "Invalid function return type (expected '->' p2)"
+      )
   | _ -> report lex "Invalid function return type"
 
 and lookup_ident str = 

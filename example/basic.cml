@@ -13,3 +13,4 @@ let main = fun void (){
     let outarr = map (arr, [], (fun int (x) {return x * 2;}), 0)
     print (outarr);
 }
+

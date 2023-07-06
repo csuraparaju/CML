@@ -1,10 +1,3 @@
-type literal =
-    INT of int
-  | BOOL of bool
-  | STRING of string
-  | ARRAY of literal list
-  | STRUCT of (string * literal) list
-
 type freturn = 
     FINT 
   | FBOOL
@@ -12,8 +5,17 @@ type freturn =
   | FARRAY
   | VOID
   | FSTRUCT
+  | FFUNCTION of freturn
 
-type token_type = 
+type literal =
+    INT of int
+  | BOOL of bool
+  | STRING of string
+  | ARRAY of literal list
+  | STRUCT of (string * literal) list
+  | FUNCTION of (freturn * token_type list * token_type list)
+
+and token_type = 
     ILLEGAL
   | IDENT of string
   | LITERAL of literal
@@ -32,12 +34,12 @@ type token_type =
   | COMMA
   | COLON
   | DOT
+  | MOD
   | SEMICOLON
   | LPAREN
   | RPAREN
   | LBRACE
   | RBRACE
-  | FUNCTION of freturn 
   | LET
   | IF
   | ELSE
@@ -52,8 +54,12 @@ let rec string_of_literal lit =
   | STRING s -> "STRING(" ^ s ^ ")"
   | ARRAY a -> "ARRAY: [" ^ List.fold_left (fun acc x -> acc ^ " " ^ (string_of_literal x)) "" a ^ " ]"
   | STRUCT s -> "STRUCT: {" ^ List.fold_left (fun acc (k, v) -> acc ^ " " ^ k ^ ": " ^ (string_of_literal v)) "" s ^ " }" 
+  | FUNCTION (ret, args, body) -> 
+    "FUNCTION (" ^ (string_of_ftype ret) ^ " (" ^ 
+    List.fold_left (fun acc x -> acc ^ " " ^ (string_of_token_type x)) "" args ^ ") {" ^
+    List.fold_left (fun acc x -> acc ^ " " ^ (string_of_token_type x)) "" body ^ " }"
 
-let string_of_ftype t = 
+and string_of_ftype t = 
   match t with
   | FINT -> "INT"
   | FBOOL -> "BOOL"
@@ -61,8 +67,9 @@ let string_of_ftype t =
   | FARRAY -> "ARRAY"
   | VOID -> "VOID"
   | FSTRUCT -> "STRUCT"
+  | FFUNCTION f -> "FUNCTION(" ^ (string_of_ftype f) ^ ")"
 
-let string_of_token_type tok = 
+and string_of_token_type tok = 
   match tok with
   | ILLEGAL -> "ILLEGAL"
   | IDENT s -> "IDENT (" ^ s ^ ")"
@@ -82,11 +89,11 @@ let string_of_token_type tok =
   | COMMA -> "COMMA"
   | SEMICOLON -> "SEMICOLON"
   | COLON -> "COLON"
+  | MOD -> "MOD"
   | LPAREN -> "LPAREN"
   | RPAREN -> "RPAREN"
   | LBRACE -> "LBRACE"
   | RBRACE -> "RBRACE"
-  | FUNCTION s -> "FUNCTION(" ^ (string_of_ftype s) ^ ")"
   | LET -> "LET"
   | IF -> "IF"
   | ELSE -> "ELSE"
