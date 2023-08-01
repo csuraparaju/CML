@@ -99,7 +99,6 @@ assert (tok1 = [Token.LET; Token.IDENT "x"; Token.ASSIGN; Token.LITERAL (Token.I
   };
   " *)
 
-
 (* Functions are represented as FUNCTION(return_type, args list, function body list) *)
 (* let hof_tok = test_lexer (Lexer.init hof_test) ([]) ;;
 assert (hof_tok = 
