@@ -45,6 +45,8 @@ let rec next_token lex =
     | ':' -> (advance lex', Some COLON)
     | '.' -> (advance lex', Some DOT)
     | '%' -> (advance lex', Some MOD)
+    | '&' -> if peek_char lex' '&' then (advance (advance lex'), Some AND) else (advance lex', Some ILLEGAL)
+    | '|' -> if peek_char lex' '|' then (advance (advance lex'), Some OR) else (advance lex', Some ILLEGAL)
     | '{' -> if peek_char lex' '(' then read_struct (advance (advance lex')) else (advance lex', Some LBRACE)
     | '<' -> if peek_char lex' '=' then (advance (advance lex'), Some LTE) else (advance lex', Some LT)
     | '>' -> if peek_char lex' '=' then (advance (advance lex'), Some GTE) else (advance lex', Some GT)
@@ -239,4 +241,13 @@ and lookup_ident str =
   | "return" -> RETURN
   | _ -> IDENT str
 
+
+let token_list lex = 
+  let rec token_list' lex acc = 
+    let (lex', token) = next_token lex in
+    match token with
+    | Some t -> token_list' lex' (Some t::acc)
+    | None -> List.rev acc
+  in
+  token_list' lex []
 

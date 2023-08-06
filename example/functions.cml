@@ -6,6 +6,14 @@ let isOdd = fun int (x) {
     return (x % 2 == 1)
 };
 
-let hof = fun fn->int (x){
-    return (fun int (y) {return x + y})
+let addCurry = fun fn->fn->int (x){
+    return (
+        fun fn->int (y) {
+            return (fun int (z) {
+                return x + y + z
+            })
+        }
+    )
 };
+
+

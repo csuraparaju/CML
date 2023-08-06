@@ -1,56 +1,101 @@
-open Ast
+include Lexer
+include Ast
+include Token 
 
 type t = {
   lex : Lexer.t;
-  current : Token.t option;
+  currTok : Token.t option;
+  nextTok : Token.t option;
 }
 
-let init src = 
-  let newLex = Lexer.init src in 
-  let (lex', currTok) = Lexer.next_token newLex in
-  { lex = lex'; current = currTok } 
+let prefix_prec = 7
+let lowest = 1 
 
-let advance_parser parser = 
-  let (lex', currTok) = Lexer.next_token parser.lex in
-  { lex = lex'; current = currTok }
+let precedence tok = 
+  match tok with
+    EQ | NOT_EQ -> 2
+  | LT | GT -> 3
+  | PLUS | MINUS -> 4
+  | SLASH | ASTERISK -> 5
+  | LPAREN | LBRACE -> 6
+  | _ -> lowest
 
-let peek_next parser = 
-  match parser.current with
-    None -> None
-  | Some _ -> 
-      let parser' = advance_parser parser in
-      parser'.current
+let init lex = 
+  let (lex', tok) = Lexer.next_token lex in
+  let (_, ntok) = Lexer.next_token lex' in
+  {
+    lex = lex';
+    currTok = tok;
+    nextTok = ntok;
+  }
 
-let rec parse_expr parser =
-  match parser.current with
-    (* Parsed ast node and the updated parser *)
-    Some (LET) -> (parse_let (parser), advance_parser((advance_parser(advance_parser(advance_parser(parser))))))
-  | Some (LITERAL(lit)) -> (Exp(Literal(lit)), (advance_parser parser))
-  | Some (IDENT(str)) -> (Exp(Identifier(str)), (advance_parser parser))
-  | _ -> raise (Failure "Parse error: invalid expression")
+
+let report parser msg = 
+  let pos = parser.lex.position in
+  let line = parser.lex.line  in
+  let ch = match parser.lex.ch with
+  | Some c -> c
+  | None -> ' ' in
+  let err = Printf.sprintf "Parse Error: %s at line %d, position %d, char %c" msg line pos ch in
+  raise (Failure err)
+
+
+let advance parser = 
+  let (lex', tok) = Lexer.next_token parser.lex in
+  let (_, ntok) = Lexer.next_token lex' in
+  {
+    lex = lex';
+    currTok = tok;
+    nextTok = ntok;
+}
+
+
+let rec parse_stmt parser = 
+  match parser.currTok with 
+    Some LET -> parse_let_stmt (advance parser)
+  | Some RETURN -> parse_return_stmt (advance parser)
+  | _ -> parse_expr_stmt parser
+
+
+and parse_let_stmt parser = 
+  (match parser.currTok with 
+    Some IDENT ident -> 
+    (match parser.nextTok with
+      Some ASSIGN ->
+        let (expr, parser') = parse_expr (advance (advance parser)) in
+        (match parser'.currTok with
+          Some SEMICOLON -> 
+            let node = Ast.LetStmt { name = Ast.Identifier(ident); value = expr } in
+            (node, advance parser')
+        | _ -> report parser' "expected semicolon (;)")
+    | _ -> report parser "expected assignment (=)")
+  | _ -> report parser "expected identifier")
+
+and parse_return_stmt parser = 
+  let (expr, parser') = parse_expr parser in
+  (match parser'.currTok with
+    Some SEMICOLON -> 
+      let node = Ast.ReturnStmt { value = expr } in
+      (node, advance parser')
+  | _ -> report parser' "expected semicolon (;)")
+
+and parse_expr_stmt parser =
+  let (expr, parser') = parse_expr parser in
+  (match parser'.currTok with
+    Some SEMICOLON -> 
+      let node = Ast.ExprStmt { exp = expr } in
+      (node, advance parser')
+  | _ -> report parser' "expected semicolon (;)")
+
+and parse_expr parser = 
+    (match parser.currTok with
+      Some LITERAL lit -> (Ast.Literal lit, advance parser)
+    | _ -> report parser "Not yet implemented") 
+
+let rec parse parser acc =
+  match parser.currTok with
+   None -> { statements = (List.rev acc) }
+  | _ -> 
+    let (stmt, parser') = parse_stmt parser in
+    parse parser' (stmt :: acc) 
   
-
-and parse_let parser =
-  let par = advance_parser parser in
-  match par.current with
-    Some(IDENT(str)) -> 
-      (let par' = advance_parser par in
-      match par'.current with
-        Some (ASSIGN) -> 
-          let (ast_node, _) = parse_expr (advance_parser par') in
-          Stmt(Let(str, ast_node))
-        | _ -> raise (Failure "Parse error: invalid let statement, \"=\" expected after identifier"))
-   | _ -> raise (Failure "Parse error: invalid let statement, identifier expected after \"let\"")
-
-(* Entry point *)
-let rec parse parser =  
-  match parser.current with 
-      None -> []
-    | Some _ -> 
-        let (ast, parser') = parse_expr parser in
-        ast :: (parse parser')
-
-
-  
-
-

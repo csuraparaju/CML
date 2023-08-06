@@ -1,52 +1,45 @@
+include Token
 
-include Token 
+type node = 
+    Expression of expression
+  | Statement of statement
 
-type node =
-  Exp of expression
-| Stmt of statement
-
-and expression =
+and expression = 
     Literal of Token.literal
   | Identifier of string
-  | Binary of expression * Token.t * expression
-  | Unary of Token.t * expression
-  | FunCall of expression * expression list (*Function name and arguments*)
+  | PrefixExp of { op: Token.t; right: expression }
+  | InfixExp of { left: expression; op: Token.t; right: expression }
+  | IfExp of { cond: expression; conseq: statement; alt: statement option }
+  | CallExp of { func: Token.literal; arguments: expression list } 
 
-and statement =
-    Let of string * node
-  | Block of node list
-  | If of expression * statement * statement
-  | Return of expression 
+and statement = 
+  LetStmt of { name: expression; value: expression }
+| ReturnStmt of { value : expression }
+| ExprStmt of { exp : expression }
+| BlockStmt of { stms: statement list }
 
-type t = node list
+type program = {
+  statements: statement list
+}
 
-let rec string_of_ast ast = 
-  match ast with 
-    [] -> ""
-  | x::xs -> (string_of_node x) ^ "\n" ^ (string_of_ast xs)
+let rec str_of_exp exp = 
+  match exp with
+    Literal lit -> Token.string_of_literal lit 
+  | Identifier id -> id
+  | PrefixExp { op; right } -> "(" ^ (Token.string_of_token_type op) ^ (str_of_exp right) ^ ")"
+  | InfixExp { left; op; right } -> "(" ^ (str_of_exp left) ^ (Token.string_of_token_type op) ^ (str_of_exp right) ^ ")"
+  | IfExp { cond; conseq; alt } -> "if " ^ (str_of_exp cond) ^ " " ^ (str_of_stm conseq) ^ (match alt with None -> "" | Some stm -> " else " ^ (str_of_stm stm))
+  | CallExp { func; arguments } -> (Token.string_of_literal func) ^ "(" ^ (String.concat ", " (List.map str_of_exp arguments)) ^ ")"
 
-and string_of_node node =
-  match node with
-    Exp e -> string_of_expression e
-  | Stmt s -> string_of_statement s
+and str_of_stm stm =
+  match stm with
+    LetStmt { name; value } -> "let " ^ (str_of_exp name) ^ " = " ^ (str_of_exp value) ^ ";"
+  | ReturnStmt { value } -> "return " ^ (str_of_exp value) ^ ";"
+  | ExprStmt { exp } -> (str_of_exp exp) ^ ";"
+  | BlockStmt { stms } -> "{ " ^ (String.concat " " (List.map str_of_stm stms)) ^ " }"
 
-and string_of_expression e =
-  match e with
-    Literal t -> Token.string_of_literal t
-  | Identifier s -> s
-  | Binary (e1, t, e2) -> (string_of_expression e1) ^ " " ^ (Token.string_of_token_type t) ^ " " ^ (string_of_expression e2)
-  | Unary (t, e) -> (Token.string_of_token_type t) ^ " " ^ (string_of_expression e)
-  | FunCall (e, el) -> (string_of_expression e) ^ "(" ^ (List.fold_left (fun acc e -> acc ^ ", " ^ (string_of_expression e)) "" el) ^ ")"
-
-and string_of_statement s =
-  match s with
-    Let (s, e) -> "LET " ^ s ^ " = " ^ (string_of_node e)
-  | Block sl -> "{\n" ^ (string_of_ast sl) ^ "}"
-  | If (e, s1, s2) -> "IF " ^ (string_of_expression e) ^ " THEN " ^ (string_of_statement s1) ^ " ELSE " ^ (string_of_statement s2)
-  | Return e -> "RETURN " ^ (string_of_expression e)
-
-let print_ast ast =
-  print_string (string_of_ast ast)
+let str_of_program prog =
+  String.concat "\n" (List.map str_of_stm prog.statements)
 
 
-  
+

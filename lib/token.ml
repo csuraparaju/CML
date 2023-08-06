@@ -31,6 +31,8 @@ and token_type =
   | LTE
   | GTE
   | NOT_EQ
+  | AND
+  | OR
   | COMMA
   | COLON
   | DOT
@@ -86,6 +88,8 @@ and string_of_token_type tok =
   | LTE -> "LTE"
   | GTE -> "GTE"
   | NOT_EQ -> "NOT_EQ"
+  | AND -> "AND"
+  | OR -> "OR"
   | COMMA -> "COMMA"
   | SEMICOLON -> "SEMICOLON"
   | COLON -> "COLON"
